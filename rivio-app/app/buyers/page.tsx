@@ -1,9 +1,50 @@
 'use client';
 
-import { Shield, AlertCircle, TrendingUp } from 'lucide-react';
-import { mockBuyers } from '@/lib/mockData';
+import { useState } from 'react';
+import { Shield, AlertCircle, TrendingUp, X } from 'lucide-react';
+import { mockBuyers, Buyer } from '@/lib/mockData';
 
 export default function BuyersPage() {
+  const [buyers, setBuyers] = useState<Buyer[]>(mockBuyers);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    creditLimit: '',
+    currentExposure: '',
+    isInsured: false,
+    riskRating: 'Low' as 'Low' | 'Medium' | 'High',
+    country: '',
+  });
+
+  const handleAddBuyer = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Create new buyer with generated ID
+    const newBuyer: Buyer = {
+      id: (buyers.length + 1).toString(),
+      name: formData.name,
+      creditLimit: Number(formData.creditLimit),
+      currentExposure: Number(formData.currentExposure),
+      isInsured: formData.isInsured,
+      riskRating: formData.riskRating,
+      country: formData.country,
+    };
+
+    // Add to buyers list
+    setBuyers([...buyers, newBuyer]);
+
+    // Reset form and close modal
+    setFormData({
+      name: '',
+      creditLimit: '',
+      currentExposure: '',
+      isInsured: false,
+      riskRating: 'Low',
+      country: '',
+    });
+    setIsModalOpen(false);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
@@ -18,16 +59,16 @@ export default function BuyersPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="card">
           <p className="text-sm font-medium text-gray-600">Total Buyers</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">{mockBuyers.length}</p>
+          <p className="text-3xl font-bold text-gray-900 mt-2">{buyers.length}</p>
           <p className="text-sm text-gray-500 mt-2">
-            {mockBuyers.filter((b) => b.isInsured).length} insured
+            {buyers.filter((b) => b.isInsured).length} insured
           </p>
         </div>
 
         <div className="card">
           <p className="text-sm font-medium text-gray-600">Total Credit Available</p>
           <p className="text-3xl font-bold text-gray-900 mt-2">
-            ${(mockBuyers.reduce((sum, b) => sum + b.creditLimit, 0) / 1000000).toFixed(1)}M
+            ${(buyers.reduce((sum, b) => sum + b.creditLimit, 0) / 1000000).toFixed(1)}M
           </p>
           <p className="text-sm text-gray-500 mt-2">Across all buyers</p>
         </div>
@@ -35,7 +76,7 @@ export default function BuyersPage() {
         <div className="card">
           <p className="text-sm font-medium text-gray-600">At Risk Buyers</p>
           <p className="text-3xl font-bold text-red-600 mt-2">
-            {mockBuyers.filter((b) => b.currentExposure / b.creditLimit > 0.9).length}
+            {buyers.filter((b) => b.currentExposure / b.creditLimit > 0.9).length}
           </p>
           <p className="text-sm text-gray-500 mt-2">&gt;90% credit utilized</p>
         </div>
@@ -45,11 +86,13 @@ export default function BuyersPage() {
       <div className="card">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-gray-900">Buyer Directory</h2>
-          <button className="btn-primary">Add Buyer</button>
+          <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
+            Add Buyer
+          </button>
         </div>
 
         <div className="space-y-4">
-          {mockBuyers.map((buyer) => {
+          {buyers.map((buyer) => {
             const utilizationPercent = (buyer.currentExposure / buyer.creditLimit) * 100;
             const isHighUtilization = utilizationPercent > 90;
             const isMediumUtilization = utilizationPercent > 70 && utilizationPercent <= 90;
@@ -168,6 +211,147 @@ export default function BuyersPage() {
           })}
         </div>
       </div>
+
+      {/* Add Buyer Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900">Add New Buyer</h2>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddBuyer} className="p-6">
+              <div className="space-y-6">
+                {/* Company Name */}
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                    Company Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="e.g., Acme Manufacturing Corp"
+                  />
+                </div>
+
+                {/* Country */}
+                <div>
+                  <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">
+                    Country *
+                  </label>
+                  <input
+                    type="text"
+                    id="country"
+                    required
+                    value={formData.country}
+                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="e.g., USA"
+                  />
+                </div>
+
+                {/* Credit Limit and Current Exposure */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="creditLimit" className="block text-sm font-medium text-gray-700 mb-2">
+                      Credit Limit ($) *
+                    </label>
+                    <input
+                      type="number"
+                      id="creditLimit"
+                      required
+                      min="0"
+                      step="1000"
+                      value={formData.creditLimit}
+                      onChange={(e) => setFormData({ ...formData, creditLimit: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="e.g., 500000"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="currentExposure" className="block text-sm font-medium text-gray-700 mb-2">
+                      Current Exposure ($) *
+                    </label>
+                    <input
+                      type="number"
+                      id="currentExposure"
+                      required
+                      min="0"
+                      step="1000"
+                      value={formData.currentExposure}
+                      onChange={(e) => setFormData({ ...formData, currentExposure: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="e.g., 250000"
+                    />
+                  </div>
+                </div>
+
+                {/* Risk Rating */}
+                <div>
+                  <label htmlFor="riskRating" className="block text-sm font-medium text-gray-700 mb-2">
+                    Risk Rating *
+                  </label>
+                  <select
+                    id="riskRating"
+                    required
+                    value={formData.riskRating}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        riskRating: e.target.value as 'Low' | 'Medium' | 'High',
+                      })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  >
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                  </select>
+                </div>
+
+                {/* Insurance Status */}
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="isInsured"
+                    checked={formData.isInsured}
+                    onChange={(e) => setFormData({ ...formData, isInsured: e.target.checked })}
+                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="isInsured" className="ml-2 block text-sm text-gray-700">
+                    This buyer is covered by trade credit insurance
+                  </label>
+                </div>
+              </div>
+
+              {/* Form Actions */}
+              <div className="mt-8 flex items-center justify-end space-x-4">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  Add Buyer
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
